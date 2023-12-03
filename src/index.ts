@@ -10,6 +10,7 @@ const defaultTemplate = `
 {{#each imports}}
 import {{this.className}} from "{{this.path}}";
 {{/each}}
+
 export default function () {
     return [
 {{#each imports}}
@@ -24,29 +25,32 @@ type templateItem = {
 }
 
 export const DecWatch = {
-    scanAndGenerate: async function (scanRoot: string, sourceRoot: string, generatedFilePath: string, template: string = defaultTemplate) {
+    scanAndGenerate: async function (scanRoot: string, sourceRoot: string, generatedFilePath: string, allowedDecorators: string[], template: string = defaultTemplate) {
 
-        const tsfiles = await glob(scanRoot + '/**/*.ts', {ignore: 'node_modules/**'})
         let classes: templateItem[] = []
+        const tsfiles = await glob(scanRoot + '/**/*.ts', {ignore: 'node_modules/**'})
+
 
         let program = ts.createProgram(tsfiles, {
             experimentalDecorators: true
         })
 
         for (const sourceFile of program.getSourceFiles()) {
-            ts.forEachChild(sourceFile, visit)
+            if (!sourceFile.fileName.startsWith(scanRoot)) continue;
+            ts.forEachChild(sourceFile, n => {
+                visit(n, sourceFile)
+            })
         }
 
         /** visit nodes finding exported classes */
-        function visit(node: ts.Node) {
-            const exported = (node.flags & ts.NodeFlags.ExportContext) !== 0 || (node.parent && node.parent.kind === ts.SyntaxKind.SourceFile)
-            if (!exported) {
-                return
-            }
+        function visit(node: ts.Node, sf: ts.SourceFile) {
+
             if (node.kind === ts.SyntaxKind.ClassDeclaration) {
-                onClassDec(<ts.ClassDeclaration>node);
+                onClassDec(<ts.ClassDeclaration>node, sf);
             } else if (node.kind === ts.SyntaxKind.ModuleDeclaration) {
-                ts.forEachChild(node, visit);
+                ts.forEachChild(node, n => {
+                    visit(n, sf)
+                });
             }
         }
 
@@ -61,13 +65,19 @@ export const DecWatch = {
         }
 
 
-        function onClassDec(node: ts.ClassDeclaration) {
-            const name = node.name!.escapedText
-
+        function onClassDec(node: ts.ClassDeclaration, sf: ts.SourceFile) {
+            const name = node.name!.escapedText.toString()
             for (let modifier of node.modifiers!) {
+
                 if (modifier.kind == ts.SyntaxKind.Decorator) {
-                    //const d = <ts.Decorator> modifier;
-                    let sf = node.getSourceFile()
+                    const d = <ts.Decorator> modifier;
+
+                    if (allowedDecorators.length > 0 && !allowedDecorators.includes(d.getText())) {
+
+                        console.log(`${d.getText()} not in ${allowedDecorators}`)
+                        continue
+                    }
+
 
                     classes.push({
                         className: name.toString(),
