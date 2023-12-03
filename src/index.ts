@@ -23,7 +23,7 @@ type templateItem = {
     path: string
 }
 
-export async function ScanAndGenerate(scanRoot: string, sourceRoot: string, generatedFilePath: string, template: string = defaultTemplate) {
+export async function scanAndGenerate(scanRoot: string, sourceRoot: string, generatedFilePath: string, template: string = defaultTemplate) {
 
     const tsfiles = await glob(scanRoot + '/**/*.ts', {ignore: 'node_modules/**'})
     let classes: templateItem[] = []
@@ -66,7 +66,7 @@ export async function ScanAndGenerate(scanRoot: string, sourceRoot: string, gene
 
         for (let modifier of node.modifiers!) {
             if (modifier.kind == ts.SyntaxKind.Decorator) {
-                const d = <ts.Decorator> modifier;
+                //const d = <ts.Decorator> modifier;
                 let sf = node.getSourceFile()
 
                 classes.push({
