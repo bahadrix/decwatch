@@ -23,59 +23,60 @@ type templateItem = {
     path: string
 }
 
-export async function scanAndGenerate(scanRoot: string, sourceRoot: string, generatedFilePath: string, template: string = defaultTemplate) {
+export const DecWatch = {
+    scanAndGenerate: async function (scanRoot: string, sourceRoot: string, generatedFilePath: string, template: string = defaultTemplate) {
 
-    const tsfiles = await glob(scanRoot + '/**/*.ts', {ignore: 'node_modules/**'})
-    let classes: templateItem[] = []
+        const tsfiles = await glob(scanRoot + '/**/*.ts', {ignore: 'node_modules/**'})
+        let classes: templateItem[] = []
 
-    let program = ts.createProgram(tsfiles, {
-        experimentalDecorators: true
-    })
+        let program = ts.createProgram(tsfiles, {
+            experimentalDecorators: true
+        })
 
-    for(const sourceFile of program.getSourceFiles()) {
-        ts.forEachChild(sourceFile, visit)
-    }
-
-    /** visit nodes finding exported classes */
-    function visit(node: ts.Node) {
-        const exported = (node.flags & ts.NodeFlags.ExportContext) !== 0 || (node.parent && node.parent.kind === ts.SyntaxKind.SourceFile)
-        if (!exported) {
-            return
+        for (const sourceFile of program.getSourceFiles()) {
+            ts.forEachChild(sourceFile, visit)
         }
-        if (node.kind === ts.SyntaxKind.ClassDeclaration) {
-            onClassDec(<ts.ClassDeclaration>node);
-        }
-        else if (node.kind === ts.SyntaxKind.ModuleDeclaration) {
-            ts.forEachChild(node, visit);
-        }
-    }
 
-
-    const content = hb.compile(template)({imports: classes});
-    fs.writeFileSync(generatedFilePath, content)
-
-    function prepareImportPath(tsFilePath: string) {
-        return tsFilePath
-            .replace(sourceRoot, '@')
-            .replace(/\.ts$/, '')
-    }
-
-
-    function onClassDec(node: ts.ClassDeclaration) {
-        const name = node.name!.escapedText
-
-        for (let modifier of node.modifiers!) {
-            if (modifier.kind == ts.SyntaxKind.Decorator) {
-                //const d = <ts.Decorator> modifier;
-                let sf = node.getSourceFile()
-
-                classes.push({
-                    className: name.toString(),
-                    path: prepareImportPath(sf.fileName)
-                })
-
+        /** visit nodes finding exported classes */
+        function visit(node: ts.Node) {
+            const exported = (node.flags & ts.NodeFlags.ExportContext) !== 0 || (node.parent && node.parent.kind === ts.SyntaxKind.SourceFile)
+            if (!exported) {
+                return
+            }
+            if (node.kind === ts.SyntaxKind.ClassDeclaration) {
+                onClassDec(<ts.ClassDeclaration>node);
+            } else if (node.kind === ts.SyntaxKind.ModuleDeclaration) {
+                ts.forEachChild(node, visit);
             }
         }
 
+
+        const content = hb.compile(template)({imports: classes});
+        fs.writeFileSync(generatedFilePath, content)
+
+        function prepareImportPath(tsFilePath: string) {
+            return tsFilePath
+                .replace(sourceRoot, '@')
+                .replace(/\.ts$/, '')
+        }
+
+
+        function onClassDec(node: ts.ClassDeclaration) {
+            const name = node.name!.escapedText
+
+            for (let modifier of node.modifiers!) {
+                if (modifier.kind == ts.SyntaxKind.Decorator) {
+                    //const d = <ts.Decorator> modifier;
+                    let sf = node.getSourceFile()
+
+                    classes.push({
+                        className: name.toString(),
+                        path: prepareImportPath(sf.fileName)
+                    })
+
+                }
+            }
+
+        }
     }
 }
