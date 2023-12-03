@@ -1,0 +1,36 @@
+{
+  "name": "@bahadrix/decwatch",
+  "version": "1.0.0",
+  "description": "Decorator Persistence Helper",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bahadrix/decwatch.git"
+  },
+  "keywords": [
+    "decorator"
+  ],
+  "author": "Bahadir <bahadrix@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bahadrix/decwatch/issues"
+  },
+  "homepage": "https://github.com/bahadrix/decwatch#readme",
+  "dependencies": {
+    "glob": "^10.3.10",
+    "handlebars": "^4.7.8",
+    "typescript": "^5.3.2"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1"
+  }
+}
