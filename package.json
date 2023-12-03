@@ -1,6 +1,6 @@
 {
   "name": "@bahadrix/decwatch",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Decorator Persistence Helper",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
